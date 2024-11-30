@@ -1,0 +1,95 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Conda environment files
+*.env
+*.conda
+*.yml
+*.yaml
+env/
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Logs and debug files
+*.log
+*.out
+*.err
+
+# IDE / Editor files
+.idea/
+*.swp
+*.swo
+*.bak
+*.tmp
+*.orig
+.vscode/
+.vscode/settings.json
+.vscode/tasks.json
+.vscode/launch.json
+.vscode/*.code-workspace
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# Temporary files and backups
+*.~undo-tree~
+*.backup
+*.swp
+*.swo
+*.tmp
+*.bak
+*.orig
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# pyftpdlib and cryptography certificates
+*.pem
+*.key
+
+# FTP server/client logs
+logs/
+*.log
+
+# Ignore data files
+*.csv
+*.sqlite3
+*.db
+
+# Ignore environment config or private settings
+*.env
+.env/
+
+# Ignore generated files
+*.crt
+*.csr
+*.key
