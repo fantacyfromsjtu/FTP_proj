@@ -3,3 +3,4 @@ pyftpdlib<=1.5.6,>=1.5.5
 cryptography>=41.0.5,<45       
 pyOpenSSL>=24.3.0             
 traitlets                     
+bcrypt
