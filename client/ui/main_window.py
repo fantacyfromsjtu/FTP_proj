@@ -1,9 +1,17 @@
 import sys
-from PyQt5.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QApplication, QMessageBox
+from PyQt5.QtWidgets import (
+    QMainWindow,
+    QVBoxLayout,
+    QWidget,
+    QApplication,
+    QMessageBox,
+    QDialog,
+)
 from client.ui.file_browser import FileBrowser
 from client.ui.progress_bar import ProgressBar
 from client.config.settings import FTP_DEFAULT_HOST
 from client.ui.login_window import LoginWindow  # 导入 LoginWindow
+from client.core.ftp_client import FTPClient  # 导入 FTPClient
 
 
 class MainWindow(QMainWindow):
@@ -42,7 +50,7 @@ class MainWindow(QMainWindow):
         """
         login_window = LoginWindow(self)  # 创建登录窗口实例
 
-        # 如果登录成功（accept() 返回 True），则连接到服务器
+        # 如果登录成功（exec_() 返回 QDialog.Accepted），则连接到服务器
         if login_window.exec_() == QDialog.Accepted:
             self.connect_to_server()
         else:
