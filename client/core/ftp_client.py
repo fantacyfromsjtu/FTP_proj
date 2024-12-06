@@ -3,32 +3,41 @@ import os
 
 
 class FTPClient:
-    """
-    FTP 客户端类，封装与 FTP 服务器的通信功能。
-    """
-
     def __init__(self, host, username, password):
-        """
-        初始化 FTP 客户端。
-        :param host: FTP 服务器地址
-        :param username: 用户名
-        :param password: 密码
-        """
-        self.ftp = FTP()
         self.host = host
         self.username = username
         self.password = password
+        self.ftp = None
 
     def connect(self):
         """
-        连接到 FTP 服务器并登录。
+        连接到 FTP 服务器并进行身份验证。
         """
         try:
-            self.ftp.connect(self.host, 21)
+            # 连接到 FTP 服务器
+            self.ftp = FTP()
+            self.ftp.connect(self.host)
+            # 尝试登录
             self.ftp.login(self.username, self.password)
-            print(f"Connected to {self.host}")
+            print("登录成功")
+            return True  # 登录成功
         except Exception as e:
-            print(f"Connection error: {e}")
+            print(f"登录失败: {e}")
+            self.ftp = None  # 连接失败，ftp 设置为 None
+            return False  # 登录失败
+
+    def quit(self):
+        """
+        退出 FTP 连接
+        """
+        if self.ftp:
+            try:
+                self.ftp.quit()
+                print("已断开连接")
+            except Exception as e:
+                print(f"退出连接失败: {e}")
+        else:
+            print("没有活跃的 FTP 连接")
 
     def list_files(self):
         """

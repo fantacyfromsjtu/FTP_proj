@@ -1,4 +1,9 @@
 # server/server_main.py
+import sys
+import os
+sys.path.append(
+    os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+)  # 添加项目根目录到 sys.path
 
 from server.core.ftp_server import start_ftp_server
 from server.core.logging import logger

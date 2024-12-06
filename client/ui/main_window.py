@@ -1,13 +1,9 @@
 import sys
-from PyQt5.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QApplication
+from PyQt5.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QApplication, QMessageBox
 from client.ui.file_browser import FileBrowser
 from client.ui.progress_bar import ProgressBar
-from client.core.ftp_client import FTPClient
-from client.config.settings import (
-    FTP_DEFAULT_HOST,
-    FTP_DEFAULT_USERNAME,
-    FTP_DEFAULT_PASSWORD,
-)
+from client.config.settings import FTP_DEFAULT_HOST
+from client.ui.login_window import LoginWindow  # 导入 LoginWindow
 
 
 class MainWindow(QMainWindow):
@@ -37,11 +33,28 @@ class MainWindow(QMainWindow):
         container.setLayout(layout)
         self.setCentralWidget(container)
 
+        # 弹出登录窗口
+        self.show_login_window()
+
+    def show_login_window(self):
+        """
+        显示登录窗口，并等待用户输入。
+        """
+        login_window = LoginWindow(self)  # 创建登录窗口实例
+
+        # 如果登录成功（accept() 返回 True），则连接到服务器
+        if login_window.exec_() == QDialog.Accepted:
+            self.connect_to_server()
+        else:
+            # 如果用户关闭了窗口或者登录失败，退出应用
+            QApplication.quit()
+
     def connect_to_server(self):
         """
         连接到 FTP 服务器。
         """
-        self.ftp_client = FTPClient(
-            FTP_DEFAULT_HOST, FTP_DEFAULT_USERNAME, FTP_DEFAULT_PASSWORD
-        )
-        self.ftp_client.connect()
+        self.ftp_client = FTPClient(FTP_DEFAULT_HOST, self.username, self.password)
+        if self.ftp_client.connect():
+            QMessageBox.information(self, "成功", "连接到 FTP 服务器成功！")
+        else:
+            QMessageBox.critical(self, "错误", "无法连接到 FTP 服务器！")
