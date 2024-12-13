@@ -19,8 +19,8 @@ class LoginWindow(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("FTP 登录")
-        self.setGeometry(400, 200, 300, 200)
-
+        self.setGeometry(100, 100, 800, 600)
+        self.server_ip = QLineEdit(self)
         self.username_input = QLineEdit(self)
         self.password_input = QLineEdit(self)
         self.password_input.setEchoMode(QLineEdit.Password)  # 隐藏密码输入
@@ -40,6 +40,7 @@ class LoginWindow(QDialog):
         layout = QVBoxLayout()
 
         form_layout = QFormLayout()
+        form_layout.addRow("服务器IP:", self.server_ip)
         form_layout.addRow("用户名:", self.username_input)
         form_layout.addRow("密码:", self.password_input)
 
@@ -53,20 +54,21 @@ class LoginWindow(QDialog):
         """
         登录按钮点击事件处理。
         """
+        server_ip = self.server_ip.text()
         username = self.username_input.text()
         password = self.password_input.text()
 
-        if self.authenticate(username, password):
+        if self.authenticate(server_ip,username, password):
             self.accept()  # 登录成功，关闭登录窗口
         else:
             self.error_label.setText("用户名或密码错误！")
 
-    def authenticate(self, username, password):
+    def authenticate(self, server_ip ,username, password):
         """
         验证用户名和密码是否正确。与服务器进行交互验证。
         """
         # 创建 FTP 客户端对象，并尝试连接到服务器
-        ftp_client = FTPClient(FTP_DEFAULT_HOST, username, password)
+        ftp_client = FTPClient(server_ip, username, password)
         print(ftp_client)
 
         # 尝试连接并登录服务器
