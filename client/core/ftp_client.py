@@ -1,4 +1,5 @@
 from ftplib import FTP
+import ftplib
 import os
 
 
@@ -71,6 +72,39 @@ class FTPClient:
                 f"STOR {remote_filename}", f, 1024, callback=handle_progress
             )
 
+    def upload_directory(self, local_dir, remote_dir, progress_callback=None):
+        """
+        递归上传本地文件夹到远程 FTP 服务器。
+        :param local_dir: 本地文件夹路径
+        :param remote_dir: 远程目标文件夹路径
+        :param progress_callback: 更新进度条的回调函数
+        """
+        try:
+            # 在 FTP 服务器上创建目标目录
+            try:
+                self.ftp.mkd(remote_dir)
+                print(f"创建远程目录: {remote_dir}")
+            except Exception:
+                print(f"远程目录 {remote_dir} 已存在，继续上传")
+
+            # 遍历本地文件夹内容
+            for item in os.listdir(local_dir):
+                local_path = os.path.join(local_dir, item)
+                remote_path = f"{remote_dir}/{item}"
+
+                if os.path.isdir(local_path):
+                    # 如果是子文件夹，递归上传
+                    print(f"发现文件夹: {local_path}")
+                    self.upload_directory(local_path, remote_path, progress_callback)
+                else:
+                    # 如果是文件，直接上传
+                    print(f"发现文件: {local_path}")
+                    self.upload_file(local_path, remote_path, progress_callback)
+
+            print(f"文件夹 {local_dir} 上传完成")
+        except Exception as e:
+            print(f"上传文件夹失败: {e}")
+            raise
 
     def download_file(self, remote_filename, local_path, progress_callback=None):
         """
@@ -80,8 +114,13 @@ class FTPClient:
         :param progress_callback: 更新进度条的回调函数
         """
         try:
+            print(f"正在下载文件: {remote_filename}")
+
             # 切换到二进制模式
             self.ftp.voidcmd("TYPE I")  # 设置 FTP 传输模式为二进制
+
+            # 确保本地路径的父目录存在
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
 
             with open(local_path, "wb") as f:
                 file_size = self.ftp.size(remote_filename)
@@ -93,7 +132,7 @@ class FTPClient:
                     if progress_callback:
                         progress_callback(f.tell() * 100 / file_size)
 
-                # 传递 handle_progress 作为唯一的回调函数
+                # 下载文件
                 self.ftp.retrbinary(
                     f"RETR {remote_filename}", callback=handle_progress, blocksize=1024
                 )
@@ -101,6 +140,49 @@ class FTPClient:
             print(f"文件 {remote_filename} 下载完成")
         except Exception as e:
             print(f"下载文件失败: {e}")
+            raise
+
+
+    def download_directory(self, remote_dir, local_dir, progress_callback=None):
+        """
+        递归下载远程文件夹到本地。
+        :param remote_dir: 远程文件夹路径
+        :param local_dir: 本地文件夹路径
+        :param progress_callback: 更新进度条的回调函数
+        """
+        try:
+            # 创建本地目录
+            if not os.path.exists(local_dir):
+                os.makedirs(local_dir)
+                print(f"创建本地目录: {local_dir}")
+
+            # 获取远程目录内容
+            file_list = self.ftp.nlst(remote_dir)  # 列出远程目录中的所有文件和子目录
+            print(f"远程目录 {remote_dir} 包含: {file_list}")
+
+            for item in file_list:
+                remote_path = (
+                    f"{remote_dir}/{item}"
+                    if not remote_dir.endswith("/")
+                    else f"{remote_dir}{item}"
+                )
+                local_path = os.path.join(local_dir, os.path.basename(item))
+
+                try:
+                    # 判断是文件还是文件夹
+                    self.ftp.cwd(remote_path)  # 尝试进入远程子文件夹
+                    print(f"发现文件夹: {remote_path}")
+                    # 如果是文件夹，递归调用
+                    self.download_directory(remote_path, local_path, progress_callback)
+                    self.ftp.cwd("..")  # 返回上一级目录
+                except Exception:
+                    # 如果不能进入，说明是文件，直接下载
+                    print(f"发现文件: {remote_path}")
+                    self.download_file(remote_path, local_path, progress_callback)
+
+            print(f"文件夹 {remote_dir} 下载完成")
+        except Exception as e:
+            print(f"下载文件夹失败: {e}")
             raise
 
     def close(self):

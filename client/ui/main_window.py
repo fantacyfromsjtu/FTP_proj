@@ -100,39 +100,64 @@ class MainWindow(QMainWindow):
 
     def download_file(self):
         """
-        下载选中的文件。
+        下载选中的文件或文件夹。
         """
-        selected_file = self.file_browser.get_selected_file()
-        if not selected_file:
-            QMessageBox.warning(self, "警告", "请先选择一个文件！")
+        selected_item = self.file_browser.get_selected_file()
+        if not selected_item:
+            QMessageBox.warning(self, "警告", "请先选择一个文件或文件夹！")
             return
 
-        save_path, _ = QFileDialog.getSaveFileName(self, "保存文件", selected_file)
-        if save_path:
+        save_path = QFileDialog.getExistingDirectory(self, "选择保存文件夹")
+        if not save_path:
+            return  # 用户取消选择
+
+        try:
+            # 判断是文件还是文件夹
             try:
+                # 如果能获取文件大小，说明是文件
+                self.ftp_client.ftp.size(selected_item)
+                local_file_path = os.path.join(save_path, selected_item)
                 self.ftp_client.download_file(
-                    selected_file, save_path, self.progress_bar.update_progress
+                    selected_item, local_file_path, self.progress_bar.update_progress
                 )
-                QMessageBox.information(
-                    self, "成功", f"文件 {selected_file} 下载成功！"
+                QMessageBox.information(self, "成功", f"文件 {selected_item} 下载成功！")
+            except Exception:
+                # 如果获取文件大小失败，说明是文件夹
+                local_dir_path = os.path.join(save_path, selected_item)
+                self.ftp_client.download_directory(
+                    selected_item, local_dir_path, self.progress_bar.update_progress
                 )
-            except Exception as e:
-                QMessageBox.critical(self, "错误", f"下载文件失败: {e}")
+                QMessageBox.information(self, "成功", f"文件夹 {selected_item} 下载成功！")
+        except Exception as e:
+            QMessageBox.critical(self, "错误", f"下载失败: {e}")
+
 
     def upload_file(self):
         """
-        上传文件到 FTP 服务器。
+        上传文件或文件夹到 FTP 服务器。
         """
-        file_path, _ = QFileDialog.getOpenFileName(self, "选择文件")
-        if file_path:
-            remote_filename = os.path.basename(file_path)
-            try:
+        file_path = QFileDialog.getExistingDirectory(self, "选择文件夹")
+        if not file_path:
+            file_path, _ = QFileDialog.getOpenFileName(self, "选择文件")
+        if not file_path:
+            return  # 用户未选择任何文件或文件夹
+
+        remote_path = f"/{os.path.basename(file_path)}"  # 远程目标路径
+
+        try:
+            if os.path.isdir(file_path):
+                # 如果是文件夹，调用 upload_directory 方法
+                self.ftp_client.upload_directory(
+                    file_path, remote_path, self.progress_bar.update_progress
+                )
+                QMessageBox.information(self, "成功", f"文件夹 {file_path} 上传成功！")
+            else:
+                # 如果是文件，调用 upload_file 方法
                 self.ftp_client.upload_file(
-                    file_path, remote_filename, self.progress_bar.update_progress
+                    file_path, remote_path, self.progress_bar.update_progress
                 )
-                QMessageBox.information(
-                    self, "成功", f"文件 {remote_filename} 上传成功！"
-                )
-                self.refresh_file_list()
-            except Exception as e:
-                QMessageBox.critical(self, "错误", f"上传文件失败: {e}")
+                QMessageBox.information(self, "成功", f"文件 {file_path} 上传成功！")
+
+            self.refresh_file_list()  # 上传成功后刷新文件列表
+        except Exception as e:
+            QMessageBox.critical(self, "错误", f"上传失败: {e}")
