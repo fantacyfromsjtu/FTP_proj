@@ -5,25 +5,25 @@ from PyQt5.QtWidgets import (
     QLineEdit,
     QPushButton,
     QLabel,
-    QMessageBox,
 )
-from client.core.ftp_client import FTPClient  # 导入 FTPClient 类
-from client.config.settings import FTP_DEFAULT_HOST
+from client.core.ftp_client import FTPClient
 
 
 class LoginWindow(QDialog):
     """
-    登录窗口类，负责输入用户名和密码。
+    登录窗口类，负责输入服务器IP、用户名和密码。
     """
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("FTP 登录")
-        self.setGeometry(100, 100, 800, 600)
+        self.setGeometry(100, 100, 300, 200)
+
+        # 输入框和按钮
         self.server_ip = QLineEdit(self)
         self.username_input = QLineEdit(self)
         self.password_input = QLineEdit(self)
-        self.password_input.setEchoMode(QLineEdit.Password)  # 隐藏密码输入
+        self.password_input.setEchoMode(QLineEdit.Password)
 
         self.login_button = QPushButton("登录", self)
         self.login_button.clicked.connect(self.on_login)
@@ -38,7 +38,6 @@ class LoginWindow(QDialog):
         初始化登录窗口界面。
         """
         layout = QVBoxLayout()
-
         form_layout = QFormLayout()
         form_layout.addRow("服务器IP:", self.server_ip)
         form_layout.addRow("用户名:", self.username_input)
@@ -58,21 +57,19 @@ class LoginWindow(QDialog):
         username = self.username_input.text()
         password = self.password_input.text()
 
-        if self.authenticate(server_ip,username, password):
-            self.accept()  # 登录成功，关闭登录窗口
+        # 尝试连接和登录
+        if self.authenticate(server_ip, username, password):
+            self.accept()  # 登录成功
         else:
             self.error_label.setText("用户名或密码错误！")
 
-    def authenticate(self, server_ip ,username, password):
+    def authenticate(self, server_ip, username, password):
         """
-        验证用户名和密码是否正确。与服务器进行交互验证。
+        验证用户名和密码是否正确。
         """
-        # 创建 FTP 客户端对象，并尝试连接到服务器
-        ftp_client = FTPClient(server_ip, username, password)
-        print(ftp_client)
-
-        # 尝试连接并登录服务器
-        if ftp_client.connect():
-            return True  # 登录成功
-        else:
-            return False  # 登录失败
+        try:
+            ftp_client = FTPClient(server_ip, username, password)
+            return ftp_client.connect()  # 登录成功返回 True
+        except Exception as e:
+            print(f"登录失败: {e}")
+            return False
