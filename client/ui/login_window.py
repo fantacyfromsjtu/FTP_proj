@@ -67,6 +67,7 @@ class LoginWindow(QDialog):
         """
         # 创建 FTP 客户端对象，并尝试连接到服务器
         ftp_client = FTPClient(FTP_DEFAULT_HOST, username, password)
+        print(ftp_client)
 
         # 尝试连接并登录服务器
         if ftp_client.connect():

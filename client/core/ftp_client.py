@@ -13,10 +13,13 @@ class FTPClient:
         """
         连接到 FTP 服务器并进行身份验证。
         """
+        print("尝试连接到 FTP 服务器")
+        # print("username, password",self.username, self.password)
         try:
             # 连接到 FTP 服务器
             self.ftp = FTP()
-            self.ftp.connect(self.host)
+            self.ftp.connect(self.host,2121)
+
             # 尝试登录
             self.ftp.login(self.username, self.password)
             print("登录成功")
@@ -68,6 +71,7 @@ class FTPClient:
                 f"STOR {remote_filename}", f, 1024, callback=handle_progress
             )
 
+
     def download_file(self, remote_filename, local_path, progress_callback=None):
         """
         下载文件到本地。
@@ -75,16 +79,29 @@ class FTPClient:
         :param local_path: 本地文件路径
         :param progress_callback: 更新进度条的回调函数
         """
-        with open(local_path, "wb") as f:
-            file_size = self.ftp.size(remote_filename)
+        try:
+            # 切换到二进制模式
+            self.ftp.voidcmd("TYPE I")  # 设置 FTP 传输模式为二进制
 
-            def handle_progress(block):
-                if progress_callback:
-                    progress_callback(f.tell() * 100 / file_size)
+            with open(local_path, "wb") as f:
+                file_size = self.ftp.size(remote_filename)
 
-            self.ftp.retrbinary(
-                f"RETR {remote_filename}", f.write, 1024, callback=handle_progress
-            )
+                def handle_progress(block):
+                    # 写入文件块
+                    f.write(block)
+                    # 更新进度
+                    if progress_callback:
+                        progress_callback(f.tell() * 100 / file_size)
+
+                # 传递 handle_progress 作为唯一的回调函数
+                self.ftp.retrbinary(
+                    f"RETR {remote_filename}", callback=handle_progress, blocksize=1024
+                )
+
+            print(f"文件 {remote_filename} 下载完成")
+        except Exception as e:
+            print(f"下载文件失败: {e}")
+            raise
 
     def close(self):
         """
