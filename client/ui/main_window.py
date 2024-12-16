@@ -16,13 +16,13 @@ class MainWindow(QMainWindow):
     主窗口类，支持浏览和操作 FTP 文件。
     """
 
-    def __init__(self, server_ip, username, password):
+    def __init__(self, server_ip, username, hashed_password):
         super().__init__()
         self.setWindowTitle("FTP Client")
         self.setGeometry(100, 100, 800, 600)
 
-        self.ftp_client = FTPClient(server_ip, username, password)
-        self.current_directory = "/"  # 记录当前目录
+        self.ftp_client = FTPClient(server_ip, username, hashed_password)
+        self.current_directory = None  # 记录当前目录
         self.progress_bar = ProgressBar()
         self.file_browser = FileBrowser()
 
@@ -41,7 +41,6 @@ class MainWindow(QMainWindow):
         container.setLayout(layout)
         self.setCentralWidget(container)
 
-
     def bind_events(self):
         """
         绑定事件和信号。
@@ -52,15 +51,23 @@ class MainWindow(QMainWindow):
 
         # 绑定导航信号
         self.file_browser.navigate_to_sub_directory.connect(self.go_to_sub_directory)
-        self.file_browser.navigate_to_parent_directory.connect(self.go_to_parent_directory)
+        self.file_browser.navigate_to_parent_directory.connect(
+            self.go_to_parent_directory
+        )
 
     def connect_to_server(self):
         """
         连接到 FTP 服务器。
         """
         if self.ftp_client.connect():
-            QMessageBox.information(self, "成功", "连接到 FTP 服务器成功！")
-            self.refresh_file_list()
+            # 获取用户根目录
+            try:
+                self.current_directory = self.ftp_client.get_home_directory()
+                QMessageBox.information(self, "成功", "连接到 FTP 服务器成功！")
+                self.refresh_file_list()
+            except Exception as e:
+                QMessageBox.critical(self, "错误", f"无法获取用户根目录: {e}")
+                self.close()
         else:
             QMessageBox.critical(self, "错误", "无法连接到 FTP 服务器！")
             self.close()
@@ -70,9 +77,11 @@ class MainWindow(QMainWindow):
         刷新文件列表。
         """
         try:
-            files = self.ftp_client.list_files()
+            files = self.ftp_client.list_files(self.current_directory)
             self.file_browser.update_file_list(
-                files, include_parent=self.current_directory != "/"
+                files,
+                include_parent=self.current_directory
+                != self.ftp_client.get_home_directory(),
             )
         except Exception as e:
             QMessageBox.critical(self, "错误", f"刷新文件列表失败: {e}")
@@ -82,10 +91,11 @@ class MainWindow(QMainWindow):
         进入子目录。
         """
         try:
-            self.ftp_client.ftp.cwd(directory)
-            self.current_directory = (
-                f"{self.current_directory.rstrip('/')}/{directory}".rstrip("/")
+            new_directory = f"{self.current_directory.rstrip('/')}/{directory}".rstrip(
+                "/"
             )
+            self.ftp_client.change_directory(new_directory)
+            self.current_directory = new_directory
             self.refresh_file_list()
         except Exception as e:
             QMessageBox.critical(self, "错误", f"无法进入目录 {directory}: {e}")
@@ -95,10 +105,16 @@ class MainWindow(QMainWindow):
         返回上级目录。
         """
         try:
-            self.ftp_client.ftp.cwd("..")
-            self.current_directory = (
-                "/".join(self.current_directory.split("/")[:-1]) or "/"
+            if self.current_directory == self.ftp_client.get_home_directory():
+                QMessageBox.warning(self, "提示", "已经在根目录，无法返回上级目录！")
+                return
+
+            parent_directory = (
+                "/".join(self.current_directory.split("/")[:-1])
+                or self.ftp_client.get_home_directory()
             )
+            self.ftp_client.change_directory(parent_directory)
+            self.current_directory = parent_directory
             self.refresh_file_list()
         except Exception as e:
             QMessageBox.critical(self, "错误", f"无法返回上级目录: {e}")
@@ -117,14 +133,13 @@ class MainWindow(QMainWindow):
             return  # 用户取消选择
 
         try:
+            remote_path = f"{self.current_directory}/{selected_item}"
             # 判断是文件还是文件夹
             try:
-                self.ftp_client.ftp.size(
-                    selected_item
-                )  # 如果能获取文件大小，说明是文件
+                self.ftp_client.ftp.size(remote_path)  # 如果能获取文件大小，说明是文件
                 local_file_path = os.path.join(save_path, selected_item)
                 self.ftp_client.download_file(
-                    selected_item, local_file_path, self.progress_bar.update_progress
+                    remote_path, local_file_path, self.progress_bar.update_progress
                 )
                 QMessageBox.information(
                     self, "成功", f"文件 {selected_item} 下载成功！"
@@ -134,7 +149,7 @@ class MainWindow(QMainWindow):
                     save_path, selected_item
                 )  # 如果失败，说明是文件夹
                 self.ftp_client.download_directory(
-                    selected_item, local_dir_path, self.progress_bar.update_progress
+                    remote_path, local_dir_path, self.progress_bar.update_progress
                 )
                 QMessageBox.information(
                     self, "成功", f"文件夹 {selected_item} 下载成功！"

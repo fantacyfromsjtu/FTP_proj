@@ -1,5 +1,4 @@
 """记录服务器运行日志和用户操作。"""
-# server/core/logging.py
 
 import logging
 from server.config import SERVER_CONFIG

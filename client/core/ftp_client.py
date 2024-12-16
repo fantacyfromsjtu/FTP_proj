@@ -1,13 +1,14 @@
 from ftplib import FTP
 import ftplib
+import json
 import os
 
 
 class FTPClient:
-    def __init__(self, host, username, password):
+    def __init__(self, host, username, hashed_password):
         self.host = host
         self.username = username
-        self.password = password
+        self.hashed_password = hashed_password
         self.ftp = None
 
     def connect(self):
@@ -15,20 +16,64 @@ class FTPClient:
         连接到 FTP 服务器并进行身份验证。
         """
         print("尝试连接到 FTP 服务器")
-        # print("username, password",self.username, self.password)
         try:
-            # 连接到 FTP 服务器
             self.ftp = FTP()
-            self.ftp.connect(self.host,2121)
-
-            # 尝试登录
-            self.ftp.login(self.username, self.password)
+            self.ftp.connect(self.host, 2121)
+            print(self.username)
+            print(self.hashed_password)
+            # 使用传入的哈希密码进行登录
+            self.ftp.login(self.username, self.hashed_password)
             print("登录成功")
-            return True  # 登录成功
+            return True
         except Exception as e:
             print(f"登录失败: {e}")
-            self.ftp = None  # 连接失败，ftp 设置为 None
-            return False  # 登录失败
+            self.ftp = None
+            return False
+
+    def get_home_directory(self):
+        """
+        获取用户的根目录（home_dir）。
+        通过 FTP 扩展命令或读取特定文件获取用户的 home_dir。
+        """
+        try:
+            # 通过特定命令从服务器获取 home_dir
+            user_data_file = f"E:\\classcode\\network\\FTP_proj\\server\\users.json"
+            local_temp_file = f"{self.username}.json"
+
+            # 下载用户信息 JSON 文件
+            self.ftp.retrbinary(
+                f"RETR {user_data_file}", open(local_temp_file, "wb").write
+            )
+
+            # 解析 JSON 文件获取 home_dir
+            with open(local_temp_file, "r") as f:
+                user_data = json.load(f)
+                this_user = None
+                ## 选出username匹配的
+                for user in user_data:
+                    if user["username"] == self.username:
+                        this_user = user
+
+            # 删除临时文件
+            os.remove(local_temp_file)
+            # 返回用户的 home_dir
+            return this_user["home_dir"]
+        except Exception as e:
+            print(f"无法获取用户根目录: {e}")
+            raise
+
+    def quit(self):
+        """
+        退出 FTP 连接
+        """
+        if self.ftp:
+            try:
+                self.ftp.quit()
+                print("已断开连接")
+            except Exception as e:
+                print(f"退出连接失败: {e}")
+        else:
+            print("没有活跃的 FTP 连接")
 
     def quit(self):
         """
@@ -141,7 +186,6 @@ class FTPClient:
         except Exception as e:
             print(f"下载文件失败: {e}")
             raise
-
 
     def download_directory(self, remote_dir, local_dir, progress_callback=None):
         """

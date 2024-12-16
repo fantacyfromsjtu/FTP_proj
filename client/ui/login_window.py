@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import (
     QLabel,
 )
 from client.core.ftp_client import FTPClient
+import hashlib
 
 
 class LoginWindow(QDialog):
@@ -57,19 +58,29 @@ class LoginWindow(QDialog):
         username = self.username_input.text()
         password = self.password_input.text()
 
+        # 将密码进行哈希处理
+        hashed_password = self.hash_password(password)
+
         # 尝试连接和登录
-        if self.authenticate(server_ip, username, password):
+        if self.authenticate(server_ip, username, hashed_password):
             self.accept()  # 登录成功
         else:
             self.error_label.setText("用户名或密码错误！")
 
-    def authenticate(self, server_ip, username, password):
+    def hash_password(self, password):
+        """
+        对密码进行哈希处理。
+        """
+        # 这里模拟简单哈希处理，真实系统可以使用更复杂的算法
+        return hashlib.sha256(password.encode("utf-8")).hexdigest()
+
+    def authenticate(self, server_ip, username, hashed_password):
         """
         验证用户名和密码是否正确。
         """
         try:
-            ftp_client = FTPClient(server_ip, username, password)
-            return ftp_client.connect()  # 登录成功返回 True
+            ftp_client = FTPClient(server_ip, username, hashed_password)
+            return ftp_client.connect()  # 使用哈希密码尝试登录
         except Exception as e:
             print(f"登录失败: {e}")
             return False

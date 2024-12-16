@@ -1,28 +1,27 @@
+"""用户管理模块"""
+
 import json
-import bcrypt
+import hashlib
 from server.config import SERVER_CONFIG
 
 
 def hash_password(password):
     """
-    使用 bcrypt 对密码进行哈希处理
+    使用 SHA256 对密码进行哈希处理
     :param password: 明文密码
     :return: 哈希后的密码
     """
-    salt = bcrypt.gensalt()  # 生成盐
-    return bcrypt.hashpw(password.encode("utf-8"), salt).decode("utf-8")
+    return hashlib.sha256(password.encode("utf-8")).hexdigest()
 
 
 def verify_password(plain_password, hashed_password):
     """
     验证输入密码是否匹配哈希值
     :param plain_password: 明文密码
-    :param hashed_password: 哈希后的密码
+    :param hashed_password: 已存储的哈希值
     :return: 匹配返回 True，否则返回 False
     """
-    return bcrypt.checkpw(
-        plain_password.encode("utf-8"), hashed_password.encode("utf-8")
-    )
+    return hash_password(plain_password) == hashed_password
 
 
 def load_users(file_path):
@@ -34,10 +33,6 @@ def load_users(file_path):
     try:
         with open(file_path, "r") as f:
             users = json.load(f)
-            for user in users:
-                # 检查是否有未加密的明文密码
-                if not user["password"].startswith("$2b$"):
-                    print(f"警告：用户 {user['username']} 的密码未加密！")
             return users
     except FileNotFoundError:
         print(f"用户文件未找到：{file_path}，请创建 users.json 文件")
@@ -58,7 +53,7 @@ def add_user(username, password, home_dir, permissions):
     """
     添加新用户
     :param username: 用户名
-    :param password: 明文密码（会被加密）
+    :param password: 明文密码
     :param home_dir: 用户根目录
     :param permissions: 用户权限
     """
