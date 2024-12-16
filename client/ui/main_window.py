@@ -20,7 +20,7 @@ class MainWindow(QMainWindow):
     def __init__(self, server_ip, username, hashed_password):
         super().__init__()
         self.setWindowTitle("FTP Client")
-        self.setGeometry(100, 100, 800, 600)
+        self.setGeometry(100, 100, 1200, 800)
 
         self.ftp_client = FTPClient(server_ip, username, hashed_password)
         self.current_directory = None  # 记录当前目录
@@ -55,11 +55,10 @@ class MainWindow(QMainWindow):
         self.file_browser.navigate_to_parent_directory.connect(
             self.go_to_parent_directory
         )
-        
+
         self.file_browser.create_button.clicked.connect(self.create_directory)
         self.file_browser.delete_button.clicked.connect(self.delete_item)
         self.file_browser.rename_button.clicked.connect(self.rename_item)
-
 
     def connect_to_server(self):
         """
@@ -105,7 +104,6 @@ class MainWindow(QMainWindow):
             self.refresh_file_list()
         except Exception as e:
             QMessageBox.critical(self, "错误", f"无法进入目录 {directory}: {e}")
-
 
     def go_to_parent_directory(self):
         """
@@ -195,7 +193,7 @@ class MainWindow(QMainWindow):
             self.refresh_file_list()
         except Exception as e:
             QMessageBox.critical(self, "错误", f"上传失败: {e}")
-            
+
     def create_directory(self):
         """
         在当前目录创建文件夹。
@@ -251,4 +249,3 @@ class MainWindow(QMainWindow):
                 self.refresh_file_list()
             except Exception as e:
                 QMessageBox.critical(self, "错误", f"重命名失败: {e}")
-

@@ -18,7 +18,7 @@ class LoginWindow(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("FTP 登录")
-        self.setGeometry(100, 100, 300, 200)
+        self.setGeometry(100, 100, 800, 500)
 
         # 输入框和按钮
         self.server_ip = QLineEdit(self)
