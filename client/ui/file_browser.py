@@ -15,11 +15,20 @@ class FileBrowser(QWidget):
         self.refresh_button = QPushButton("刷新文件列表")
         self.download_button = QPushButton("下载选中文件")
         self.upload_button = QPushButton("上传文件")
+        self.create_button = QPushButton("创建文件夹")
+        self.delete_button = QPushButton("删除")
+        self.rename_button = QPushButton("重命名")
 
         self.layout.addWidget(self.file_list)
         self.layout.addWidget(self.refresh_button)
         self.layout.addWidget(self.download_button)
         self.layout.addWidget(self.upload_button)
+        
+
+        self.layout.addWidget(self.create_button)
+        self.layout.addWidget(self.delete_button)
+        self.layout.addWidget(self.rename_button)
+
         self.setLayout(self.layout)
 
         # 信号绑定

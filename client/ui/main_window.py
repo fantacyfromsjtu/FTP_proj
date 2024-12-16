@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import (
     QWidget,
     QMessageBox,
     QFileDialog,
+    QInputDialog
 )
 from client.ui.file_browser import FileBrowser
 from client.ui.progress_bar import ProgressBar
@@ -54,6 +55,11 @@ class MainWindow(QMainWindow):
         self.file_browser.navigate_to_parent_directory.connect(
             self.go_to_parent_directory
         )
+        
+        self.file_browser.create_button.clicked.connect(self.create_directory)
+        self.file_browser.delete_button.clicked.connect(self.delete_item)
+        self.file_browser.rename_button.clicked.connect(self.rename_item)
+
 
     def connect_to_server(self):
         """
@@ -77,7 +83,7 @@ class MainWindow(QMainWindow):
         刷新文件列表。
         """
         try:
-            files = self.ftp_client.list_files(self.current_directory)
+            files = self.ftp_client.list_files()
             self.file_browser.update_file_list(
                 files,
                 include_parent=self.current_directory
@@ -91,31 +97,37 @@ class MainWindow(QMainWindow):
         进入子目录。
         """
         try:
-            new_directory = f"{self.current_directory.rstrip('/')}/{directory}".rstrip(
-                "/"
-            )
+            new_directory = f"{self.current_directory.rstrip('/')}/{directory}".rstrip("/")
+            print(f"导航到子目录: {new_directory}")
             self.ftp_client.change_directory(new_directory)
-            self.current_directory = new_directory
+            self.current_directory = self.ftp_client.ftp.pwd()  # 获取切换后的实际路径
+            print(f"当前目录切换成功: {self.current_directory}")
             self.refresh_file_list()
         except Exception as e:
             QMessageBox.critical(self, "错误", f"无法进入目录 {directory}: {e}")
+
 
     def go_to_parent_directory(self):
         """
         返回上级目录。
         """
         try:
+            # 如果已经在根目录
             if self.current_directory == self.ftp_client.get_home_directory():
                 QMessageBox.warning(self, "提示", "已经在根目录，无法返回上级目录！")
                 return
 
-            parent_directory = (
-                "/".join(self.current_directory.split("/")[:-1])
-                or self.ftp_client.get_home_directory()
-            )
-            self.ftp_client.change_directory(parent_directory)
-            self.current_directory = parent_directory
-            self.refresh_file_list()
+            # 计算上级目录路径
+            parent_directory = "/".join(self.current_directory.rstrip("/").split("/")[:-1])
+            print(parent_directory)
+            if not parent_directory:  # 如果为空，说明要返回根目录
+                parent_directory = self.ftp_client.get_home_directory()
+
+            print(f"导航到上级目录: {parent_directory}")
+            self.ftp_client.change_directory(parent_directory)  # 切换到上级目录
+            self.current_directory = self.ftp_client.ftp.pwd()  # 更新当前目录
+            print(f"当前目录切换成功: {self.current_directory}")
+            self.refresh_file_list()  # 刷新文件列表
         except Exception as e:
             QMessageBox.critical(self, "错误", f"无法返回上级目录: {e}")
 
@@ -183,3 +195,60 @@ class MainWindow(QMainWindow):
             self.refresh_file_list()
         except Exception as e:
             QMessageBox.critical(self, "错误", f"上传失败: {e}")
+            
+    def create_directory(self):
+        """
+        在当前目录创建文件夹。
+        """
+        directory_name, ok = QInputDialog.getText(self, "创建文件夹", "请输入文件夹名称:")
+        if ok and directory_name:
+            try:
+                remote_path = f"{self.current_directory}/{directory_name}"
+                self.ftp_client.create_directory(remote_path)
+                QMessageBox.information(self, "成功", f"文件夹 '{directory_name}' 创建成功！")
+                self.refresh_file_list()
+            except Exception as e:
+                QMessageBox.critical(self, "错误", f"创建文件夹失败: {e}")
+
+    def delete_item(self):
+        """
+        删除选中的文件或文件夹。
+        """
+        selected_item = self.file_browser.get_selected_file()
+        if not selected_item:
+            QMessageBox.warning(self, "警告", "请先选择一个文件或文件夹！")
+            return
+
+        confirm = QMessageBox.question(
+            self, "删除确认", f"确定删除 '{selected_item}' 吗？",
+            QMessageBox.Yes | QMessageBox.No
+        )
+        if confirm == QMessageBox.Yes:
+            try:
+                remote_path = f"{self.current_directory}/{selected_item}"
+                self.ftp_client.delete_item(remote_path)
+                QMessageBox.information(self, "成功", f"'{selected_item}' 已删除！")
+                self.refresh_file_list()
+            except Exception as e:
+                QMessageBox.critical(self, "错误", f"删除失败: {e}")
+
+    def rename_item(self):
+        """
+        重命名选中的文件或文件夹。
+        """
+        selected_item = self.file_browser.get_selected_file()
+        if not selected_item:
+            QMessageBox.warning(self, "警告", "请先选择一个文件或文件夹！")
+            return
+
+        new_name, ok = QInputDialog.getText(self, "重命名", "请输入新的名称:", text=selected_item)
+        if ok and new_name and new_name != selected_item:
+            try:
+                old_path = f"{self.current_directory}/{selected_item}"
+                new_path = f"{self.current_directory}/{new_name}"
+                self.ftp_client.rename_item(old_path, new_path)
+                QMessageBox.information(self, "成功", f"'{selected_item}' 已重命名为 '{new_name}'！")
+                self.refresh_file_list()
+            except Exception as e:
+                QMessageBox.critical(self, "错误", f"重命名失败: {e}")
+

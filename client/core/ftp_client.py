@@ -33,34 +33,68 @@ class FTPClient:
     def get_home_directory(self):
         """
         获取用户的根目录（home_dir）。
-        通过 FTP 扩展命令或读取特定文件获取用户的 home_dir。
         """
+
         try:
-            # 通过特定命令从服务器获取 home_dir
-            user_data_file = f"E:\\classcode\\network\\FTP_proj\\server\\users.json"
+            # 修改为 FTP 服务器上的相对路径
+            user_data_file = "/server/users.json"
             local_temp_file = f"{self.username}.json"
 
             # 下载用户信息 JSON 文件
-            self.ftp.retrbinary(
-                f"RETR {user_data_file}", open(local_temp_file, "wb").write
-            )
+            print(f"尝试下载用户数据文件: {user_data_file}")
+            self.ftp.retrbinary(f"RETR {user_data_file}", open(local_temp_file, "wb").write)
+            print(f"成功下载用户数据文件到本地: {local_temp_file}")
 
             # 解析 JSON 文件获取 home_dir
-            with open(local_temp_file, "r") as f:
-                user_data = json.load(f)
-                this_user = None
-                ## 选出username匹配的
-                for user in user_data:
-                    if user["username"] == self.username:
-                        this_user = user
+            try:
+                with open(local_temp_file, "r") as f:
+                    user_data = json.load(f)
+            except json.JSONDecodeError as e:
+                print(f"无法解析 JSON 文件: {e}")
+                raise
+
+            # 查找当前用户的数据
+            this_user = None
+            for user in user_data:
+                if user["username"] == self.username:
+                    this_user = user
+                    break
 
             # 删除临时文件
             os.remove(local_temp_file)
+
             # 返回用户的 home_dir
-            return this_user["home_dir"]
+            if this_user:
+                print(f"成功获取用户 {self.username} 的 home_dir: {this_user['home_dir']}")
+                return this_user["home_dir"]
+            else:
+                raise Exception(f"未找到匹配的用户: {self.username}")
         except Exception as e:
             print(f"无法获取用户根目录: {e}")
             raise
+
+
+    def change_directory(self, directory):
+        """
+        更改 FTP 的当前工作目录。
+        :param directory: 要切换到的目标目录
+        """
+        try:
+            print(f"尝试切换到目录: {directory}")
+            self.ftp.cwd(directory)  # 切换到指定目录
+            print(f"成功切换到目录: {self.ftp.pwd()}")  # 打印当前工作目录
+        except ftplib.error_perm as e:
+            print(f"权限错误，无法切换到目录 {directory}: {e}")
+            raise Exception(f"权限错误，无法切换到目录 {directory}: {e}")
+        except ftplib.error_temp as e:
+            print(f"临时错误，无法切换到目录 {directory}: {e}")
+            raise Exception(f"临时错误，无法切换到目录 {directory}: {e}")
+        except ftplib.error_proto as e:
+            print(f"协议错误，无法切换到目录 {directory}: {e}")
+            raise Exception(f"协议错误，无法切换到目录 {directory}: {e}")
+        except Exception as e:
+            print(f"未知错误，无法切换到目录 {directory}: {e}")
+            raise Exception(f"未知错误，无法切换到目录 {directory}: {e}")
 
     def quit(self):
         """
@@ -234,3 +268,48 @@ class FTPClient:
         关闭与 FTP 的连接。
         """
         self.ftp.quit()
+        
+        
+    def create_directory(self, path):
+        """
+        在 FTP 服务器上创建目录。
+        :param path: 要创建的远程目录路径
+        """
+        try:
+            self.ftp.mkd(path)
+            print(f"创建远程目录: {path}")
+        except Exception as e:
+            print(f"创建目录失败: {e}")
+            raise
+
+    def delete_item(self, path):
+        """
+        删除 FTP 服务器上的文件或目录。
+        :param path: 要删除的远程路径
+        """
+        try:
+            # 尝试删除文件
+            try:
+                self.ftp.delete(path)
+                print(f"删除文件: {path}")
+            except ftplib.error_perm:
+                # 如果是目录，递归删除
+                self.ftp.rmd(path)
+                print(f"删除目录: {path}")
+        except Exception as e:
+            print(f"删除失败: {e}")
+            raise
+
+    def rename_item(self, old_path, new_path):
+        """
+        重命名 FTP 服务器上的文件或目录。
+        :param old_path: 旧路径
+        :param new_path: 新路径
+        """
+        try:
+            self.ftp.rename(old_path, new_path)
+            print(f"重命名 {old_path} -> {new_path}")
+        except Exception as e:
+            print(f"重命名失败: {e}")
+            raise
+
