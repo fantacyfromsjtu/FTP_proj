@@ -60,16 +60,48 @@ class MainWindow(QMainWindow):
         self.file_browser.delete_button.clicked.connect(self.delete_item)
         self.file_browser.rename_button.clicked.connect(self.rename_item)
 
+
     def connect_to_server(self):
         """
         连接到 FTP 服务器。
         """
         if self.ftp_client.connect():
-            # 获取用户根目录
             try:
                 self.current_directory = self.ftp_client.get_home_directory()
                 QMessageBox.information(self, "成功", "连接到 FTP 服务器成功！")
                 self.refresh_file_list()
+
+                # 匿名用户限制功能
+                if self.ftp_client.is_anonymous:
+                    self.file_browser.set_button_style(
+                        self.file_browser.upload_button, "#D3D3D3", enabled=False
+                    )
+                    self.file_browser.set_button_style(
+                        self.file_browser.delete_button, "#D3D3D3", enabled=False
+                    )
+                    self.file_browser.set_button_style(
+                        self.file_browser.rename_button, "#D3D3D3", enabled=False
+                    )
+                    self.file_browser.set_button_style(
+                        self.file_browser.create_button, "#D3D3D3", enabled=False
+                    )
+
+                    QMessageBox.information(self, "提示", "匿名用户登录，仅可下载文件！")
+                else:
+                    # 启用所有功能按钮
+                    self.file_browser.set_button_style(
+                        self.file_browser.upload_button, "#DA70D6", enabled=True
+                    )
+                    self.file_browser.set_button_style(
+                        self.file_browser.delete_button, "#FF4500", enabled=True
+                    )
+                    self.file_browser.set_button_style(
+                        self.file_browser.rename_button, "#D3D3D3", enabled=True
+                    )
+                    self.file_browser.set_button_style(
+                        self.file_browser.create_button, "#FFD700", enabled=True
+                    )
+
             except Exception as e:
                 QMessageBox.critical(self, "错误", f"无法获取用户根目录: {e}")
                 self.close()

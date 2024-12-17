@@ -57,8 +57,9 @@ class FileBrowser(QWidget):
         # 信号绑定
         self.file_list.itemDoubleClicked.connect(self.on_item_double_clicked)
 
+
     def set_button_styles(self):
-        """设置按钮的颜色样式"""
+        """设置按钮的默认颜色样式"""
         # 刷新按钮 - 蓝色
         self.set_button_style(self.refresh_button, "#87CEEB")
 
@@ -77,23 +78,40 @@ class FileBrowser(QWidget):
         # 重命名按钮 - 灰色
         self.set_button_style(self.rename_button, "#D3D3D3")
 
-    def set_button_style(self, button, color):
-        """为按钮设置背景颜色"""
-        button.setStyleSheet(
-            f"""
-            QPushButton {{
-                background-color: {color};
-                color: black;
-                font-weight: bold;
-                border: none;
-                border-radius: 5px;
-                padding: 10px;
-            }}
-            QPushButton:hover {{
-                background-color: #B0E0E6;  /* 提供悬停效果 */
-            }}
-            """
-        )
+
+    def set_button_style(self, button, color, enabled=True):
+        """为按钮设置背景颜色和禁用状态样式"""
+        if enabled:
+            button.setStyleSheet(
+                f"""
+                QPushButton {{
+                    background-color: {color};
+                    color: black;
+                    font-weight: bold;
+                    border: none;
+                    border-radius: 5px;
+                    padding: 10px;
+                }}
+                QPushButton:hover {{
+                    background-color: #B0E0E6;
+                }}
+                """
+            )
+        else:
+            # 灰色背景，暗淡文本颜色表示禁用
+            button.setStyleSheet(
+                """
+                QPushButton {
+                    background-color: #D3D3D3;
+                    color: #A9A9A9;
+                    font-weight: bold;
+                    border: none;
+                    border-radius: 5px;
+                    padding: 10px;
+                }
+                """
+            )
+            button.setEnabled(False)  # 禁用按钮
 
     def update_file_list(self, files, include_parent=False):
         """

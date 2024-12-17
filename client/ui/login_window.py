@@ -29,6 +29,9 @@ class LoginWindow(QDialog):
         self.login_button = QPushButton("登录", self)
         self.login_button.clicked.connect(self.on_login)
 
+        self.anonymous_button = QPushButton("匿名登录", self)
+        self.anonymous_button.clicked.connect(self.on_anonymous_login)
+
         self.error_label = QLabel("", self)
         self.error_label.setStyleSheet("color: red;")
 
@@ -46,6 +49,7 @@ class LoginWindow(QDialog):
 
         layout.addLayout(form_layout)
         layout.addWidget(self.login_button)
+        layout.addWidget(self.anonymous_button)
         layout.addWidget(self.error_label)
 
         self.setLayout(layout)
@@ -66,6 +70,17 @@ class LoginWindow(QDialog):
             self.accept()  # 登录成功
         else:
             self.error_label.setText("用户名或密码错误！")
+
+    def on_anonymous_login(self):
+        """匿名登录逻辑，无需密码。"""
+        server_ip = self.server_ip.text()
+        username = "anonymous"
+        hashed_password = ""  # 匿名用户无密码
+
+        if self.authenticate(server_ip, username, hashed_password):
+            self.accept()  # 登录成功
+        else:
+            self.error_label.setText("匿名登录失败，请检查服务器设置！")
 
     def hash_password(self, password):
         """

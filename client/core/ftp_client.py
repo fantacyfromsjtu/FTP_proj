@@ -2,32 +2,30 @@ from ftplib import FTP
 import ftplib
 import json
 import os
-
+from PyQt5.QtWidgets import QMessageBox
 
 class FTPClient:
     def __init__(self, host, username, hashed_password):
         self.host = host
         self.username = username
         self.hashed_password = hashed_password
+        self.is_anonymous = username.lower() == "anonymous"  # 判断是否匿名用户
         self.ftp = None
 
     def connect(self):
-        """
-        连接到 FTP 服务器并进行身份验证。
-        """
-        print("尝试连接到 FTP 服务器")
+        """连接到 FTP 服务器并进行身份验证。"""
         try:
             self.ftp = FTP()
             self.ftp.connect(self.host, 2121)
-            print(self.username)
-            print(self.hashed_password)
-            # 使用传入的哈希密码进行登录
-            self.ftp.login(self.username, self.hashed_password)
-            print("登录成功")
+            if self.is_anonymous:
+                self.ftp.login("anonymous", "")
+                print("匿名用户登录成功")
+            else:
+                self.ftp.login(self.username, self.hashed_password)
+                print("登录成功")
             return True
         except Exception as e:
             print(f"登录失败: {e}")
-            self.ftp = None
             return False
 
     def get_home_directory(self):
@@ -72,7 +70,6 @@ class FTPClient:
         except Exception as e:
             print(f"无法获取用户根目录: {e}")
             raise
-
 
     def change_directory(self, directory):
         """
@@ -140,6 +137,9 @@ class FTPClient:
         :param remote_filename: 远程文件名
         :param progress_callback: 更新进度条的回调函数
         """
+        if self.is_anonymous:
+            QMessageBox.warning(None, "警告", "匿名用户无法上传文件！")
+            return
         with open(local_path, "rb") as f:
             file_size = os.path.getsize(local_path)
 
@@ -158,6 +158,9 @@ class FTPClient:
         :param remote_dir: 远程目标文件夹路径
         :param progress_callback: 更新进度条的回调函数
         """
+        if self.is_anonymous:
+            QMessageBox.warning(None, "警告", "匿名用户无法上传文件！")
+            return
         try:
             # 在 FTP 服务器上创建目标目录
             try:
@@ -268,13 +271,15 @@ class FTPClient:
         关闭与 FTP 的连接。
         """
         self.ftp.quit()
-        
-        
+
     def create_directory(self, path):
         """
         在 FTP 服务器上创建目录。
         :param path: 要创建的远程目录路径
         """
+        if self.is_anonymous:
+            QMessageBox.warning(None, "权限限制", "匿名用户无法创建目录！")
+            return
         try:
             self.ftp.mkd(path)
             print(f"创建远程目录: {path}")
@@ -287,6 +292,10 @@ class FTPClient:
         删除 FTP 服务器上的文件或目录。
         :param path: 要删除的远程路径
         """
+        if self.is_anonymous:
+        # 弹出图形界面提示框
+            QMessageBox.warning(None, "权限限制", "匿名用户无法删除文件或目录！")
+            return
         try:
             # 尝试删除文件
             try:
@@ -306,10 +315,11 @@ class FTPClient:
         :param old_path: 旧路径
         :param new_path: 新路径
         """
+        if self.is_anonymous:
+            raise PermissionError("匿名用户无法重命名！")
         try:
             self.ftp.rename(old_path, new_path)
             print(f"重命名 {old_path} -> {new_path}")
         except Exception as e:
             print(f"重命名失败: {e}")
             raise
-
