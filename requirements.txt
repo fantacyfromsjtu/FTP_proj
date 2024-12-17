@@ -1,7 +1,8 @@
-tqdm<=4.66.1,>=4.64.1          
-pyftpdlib<=1.5.6,>=1.5.5      
+tqdm<=4.66.1,>=4.64.1              
 cryptography>=41.0.5,<45       
 pyOpenSSL>=24.3.0             
 traitlets                     
 bcrypt
-pyQt5
+pyftpdlib==1.5.6
+PyQt5==5.15.11
+PyQt5_sip==12.15.0
