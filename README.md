@@ -28,3 +28,38 @@ python server/server_main.py -h
 ```bash
 python client/main.py
 ```
+
+## 2.文件结构
+```
+FTP_proj
+│
+├─ .gitignore
+├─ client
+│  ├─ core
+│  │  ├─ file_operations.py
+│  │  ├─ ftp_client.py
+│  │  └─ __init__.py
+│  ├─ main.py
+│  ├─ ui
+│  │  ├─ file_browser.py
+│  │  ├─ login_window.py
+│  │  ├─ main_window.py
+│  │  ├─ progress_bar.py
+│  │  └─ __init__.py
+│  └─ __init__.py
+├─ LICENSE
+├─ README.md
+├─ requirements.txt
+└─ server
+   ├─ config.py
+   ├─ core
+   │  ├─ file_system.py
+   │  ├─ ftp_server.py
+   │  ├─ logging.py
+   │  ├─ user_management.py
+   │  └─ __init__.py
+   ├─ server_main.py
+   ├─ users.json
+   └─ __init__.py
+
+```

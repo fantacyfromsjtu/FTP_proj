@@ -106,6 +106,7 @@ if __name__ == "__main__":
         # 启动服务器
         try:
             logger.info("FTP服务器启动中...")
+            print("FTP服务器,启动!")
             start_ftp_server()
         except Exception as e:
             logger.error(f"FTP服务器启动失败：{e}")

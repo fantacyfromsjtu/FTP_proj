@@ -6,6 +6,6 @@ SERVER_CONFIG = {
     "USERS_FILE": "./server/users.json",  # 用户数据文件路径
     "LOG_FILE": "./server/ftp_server.log",  # 日志文件路径
     "ALLOW_ANONYMOUS": False,  # 是否允许匿名用户
-    "ANONYMOUS_DIR": "./server/anonDir",  # 匿名用户的根目录
+    "ANONYMOUS_DIR": "./",  # 匿名用户的根目录
     "BANNER": "欢迎使用 FTP 服务器！",  # 自定义欢迎语
 }
